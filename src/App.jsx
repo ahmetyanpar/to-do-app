@@ -10,6 +10,7 @@ function App() {
   const [newListItem, setNewListItem] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
+  const [deletedId, setDeletedId] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("todo-items", JSON.stringify(listItems));
@@ -23,8 +24,14 @@ function App() {
   }
 
   function handleDeleteItem(indexToRemove) {
-    const updatedList = listItems.filter((_item, index) => index !== indexToRemove);
-    setListItems(updatedList);
+    const idToRemove = listItems[indexToRemove].id;
+    setDeletedId(idToRemove);
+
+    setTimeout(() => {
+      const updatedList = listItems.filter((_item, index) => index !== indexToRemove);
+      setListItems(updatedList);
+      setDeletedId(null);
+    }, 300);
   }
 
   function handleToggleComplete(index) {
@@ -75,43 +82,52 @@ function App() {
         {listItems.map((item, index) => (
           <li
             key={item.id}
-            className="flex justify-between items-center bg-zinc-800 hover:bg-zinc-700 p-3 rounded-md transition">
+            className={`w-full flex justify-between items-center bg-zinc-800 hover:bg-zinc-700 p-3 rounded-md transition-all duration-300 ease-in-out transform ${
+              deletedId === item.id ? "opacity-0 translate-x-4" : "opacity-100"
+            } ${editingId === item.id ? "" : "animate-fadeIn"}`}
+          >
             {/* If currently editing this item */}
             {editingId === item.id ? (
-              <div className="flex flex-col sm:flex-row gap-2 w-full">
-                <input
-                  type="text"
-                  value={editText}
-                  onChange={e => setEditText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && editText.trim()) {
-                      handleSaveEdit(item.id);
-                    } 
-                  }}
-                  className="flex-grow px-3 py-1 rounded bg-zinc-700 text-white ring-2 ring-blue-400 focus:ring-blue-500"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleSaveEdit(item.id)}
-                    disabled={!editText.trim()}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                  >
-                    Done
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingId(null);
-                      setEditText("");
+              <div className="w-full animate-fadeIn transition-opacity duration-200 ease-out">
+                <div className="flex flex-col sm:flex-row gap-2 w-full">
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && editText.trim()) {
+                        handleSaveEdit(item.id);
+                      } 
                     }}
-                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
+                    className="flex-grow px-3 py-1 rounded bg-zinc-700 text-white ring-2 ring-blue-400 focus:ring-blue-500"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSaveEdit(item.id)}
+                      disabled={!editText.trim()}
+                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors duration-200"
+                    >
+                      Done
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditText("");
+                      }}
+                      className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors duration-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <>
-                <span className={`${item.completed ? "line-through text-gray-400" : ""}`}>
+              <div className="w-full animate-fadeIn transition-opacity duration-200 ease-out flex justify-between items-center">
+                <span   
+                  className={`flex-1 transition-all duration-300 ease-in-out ${
+                  item.completed ? "line-through text-gray-400" : "text-white"
+                  }`}
+                >
                   {item.text}
                 </span>
                 <div className="flex items-center gap-2">
@@ -119,25 +135,25 @@ function App() {
                     type="checkbox"
                     checked={item.completed}
                     onChange={() => handleToggleComplete(index)}
-                    className="w-4 h-4 accent-green-400"
+                    className="w-4 h-4 accent-green-400 transform transition-transform duration-200 hover:scale-110"
                   />
                   <button
                     onClick={() => {
                       setEditingId(item.id);
                       setEditText(item.text);
                     }}
-                    className="px-2 py-1 text-white rounded bg-indigo-500 hover:bg-indigo-600"
+                    className="px-2 py-1 text-white rounded bg-indigo-500 hover:bg-indigo-600 transition-colors duration-200"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteItem(index)}
-                    className="px-2 py-1 text-white rounded bg-rose-500 hover:bg-rose-600"
+                    className="px-2 py-1 text-white rounded bg-rose-500 hover:bg-rose-600 transition-colors duration-200"
                   >
                     Delete
                   </button>
                 </div>
-              </>
+              </div>
             )}
           </li>
         ))}
@@ -156,21 +172,22 @@ function App() {
         />
         <button type="button" 
           onClick={handleAddItem} 
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200">
           Add
         </button>
       </div>
-      <div className="mt-6 space-x-4">
+      <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
         <button type="button" 
           onClick={handleExport} 
           title="Download your to-do list as a JSON file" 
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+          disabled={listItems.length === 0}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200 disabled:opacity-50">
           Export Tasks
         </button>
         <button type="button" 
           onClick={handleClearCompleted} 
           disabled={!listItems.some(item => item.completed)} 
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50">
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition-colors duration-200">
             Clear Completed Tasks
           </button>
       </div>
